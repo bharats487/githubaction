@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - main
-  pull_request: # Optional: Run on pull requests for testing
+  pull_request:
     branches:
       - main
 
@@ -15,32 +15,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      # Step 2: Set up Terraform
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.0.0 # Specify the desired Terraform version
+          terraform_version: 1.0.0
 
-      # Step 3: Initialize Terraform (terraform init)
       - name: Terraform Init
         run: terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Step 4: Validate Terraform configuration (optional but recommended)
       - name: Terraform Validate
         run: terraform validate
 
-      # Step 5: Plan the infrastructure changes (terraform plan)
       - name: Terraform Plan
-        run: terraform plan
-
-      # Step 6: Apply the infrastructure changes (terraform apply)
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' # Only apply on the main branch
-        run: terraform apply -auto-approve
+        run: terraform plan -out=tfplan
         env:
-          TF_VAR_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
