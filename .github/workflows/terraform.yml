@@ -6,27 +6,40 @@ on:
   push:
     branches:
       - main
+  pull_request: # Optional: Run on pull requests for testing
+    branches:
+      - main
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Step 2: Set up Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.0.0  # Specify the Terraform version you want
+          terraform_version: 1.0.0 # Specify the desired Terraform version
 
+      # Step 3: Initialize Terraform (terraform init)
       - name: Terraform Init
         run: terraform init
 
+      # Step 4: Validate Terraform configuration (optional but recommended)
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 5: Plan the infrastructure changes (terraform plan)
       - name: Terraform Plan
         run: terraform plan
 
+      # Step 6: Apply the infrastructure changes (terraform apply)
       - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' # Only apply on the main branch
         run: terraform apply -auto-approve
         env:
           TF_VAR_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
